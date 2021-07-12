@@ -9,22 +9,28 @@ function App() {
     }, 1000);
   });
 
-  // workaround
-  new Observable((sub) => {
-    observable(getText).subscribe((v) => {
-      sub.next(v);
-    });
-  }).subscribe((v) => {
-    console.log("new Observable", v);
+  // use custom operator as workaround
+  fromObservablePattern<string>(observable(getText)).subscribe((v) => {
+    console.log("custom operator", v);
   });
 
   // bug
-  const text$ = from(observable(getText));
-  text$.subscribe((v) => {
-    console.log("from operator", v);
-  });
+  // const text$ = from(observable(getText));
+  // text$.subscribe((v) => {
+  //   console.log(" builtin from operator", v);
+  // });
 
   return <div>{getText()}</div>;
+}
+
+function fromObservablePattern<T = unknown>(observableLike: any) {
+  return new Observable<T>((sub) => {
+    observableLike.subscribe!({
+      next: (v: T) => sub.next(v),
+      error: (v) => sub.error(v),
+      complete: () => sub.complete(),
+    });
+  });
 }
 
 export default App;
